@@ -53,17 +53,17 @@ impl ZKPProtocol {
         y1: &BigUint,
         y2: &BigUint,
     ) -> bool {
-        (*r1 == ((self.g.modpow(s, &self.p))
-            * y1.modpow(c, &self.p)).modpow(&BigUint::from(1u32), &self.p))
+        (*r1 == ((self.g.modpow(s, &self.p)) * y1.modpow(c, &self.p))
+            .modpow(&BigUint::from(1u32), &self.p))
             && (*r2
-                == ((self.h.modpow(s, &self.p))
-                    * y2.modpow(c, &self.p)).modpow(&BigUint::from(1u32), &self.p))
+                == ((self.h.modpow(s, &self.p)) * y2.modpow(c, &self.p))
+                    .modpow(&BigUint::from(1u32), &self.p))
     }
 }
 
 ///
 /// generate random value in Z/qZ
-/// 
+///
 pub fn generate_random_value(max: &BigUint) -> BigUint {
     let mut rng = rand::thread_rng();
     rng.gen_biguint_below(max)
@@ -109,65 +109,60 @@ pub fn generate_random_value(max: &BigUint) -> BigUint {
 //     ZKPProtocol { p, q, g, h }
 // }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_with_fixed_k_c() {
-     let params = ZKPProtocol {
-        p: BigUint::from(23u32),
-        q: BigUint::from(11u32),
-        g: BigUint::from(4u32),
-        h: BigUint::from(9u32)
-     };
+        let params = ZKPProtocol {
+            p: BigUint::from(23u32),
+            q: BigUint::from(11u32),
+            g: BigUint::from(4u32),
+            h: BigUint::from(9u32),
+        };
 
-     let x = BigUint::from(3u32);
-     let k = BigUint::from(4u32);
+        let x = BigUint::from(3u32);
+        let k = BigUint::from(4u32);
 
-     let (y1, y2) = params.compute_public_pair(&x);
-     assert_eq!(y1, BigUint::from(18u32));
-     assert_eq!(y2, BigUint::from(16u32));
+        let (y1, y2) = params.compute_public_pair(&x);
+        assert_eq!(y1, BigUint::from(18u32));
+        assert_eq!(y2, BigUint::from(16u32));
 
-     let (r1, r2) = params.compute_public_pair(&k);
-     assert_eq!(r1, BigUint::from(3u32));
-     assert_eq!(r2, BigUint::from(6u32));
+        let (r1, r2) = params.compute_public_pair(&k);
+        assert_eq!(r1, BigUint::from(3u32));
+        assert_eq!(r2, BigUint::from(6u32));
 
+        let c = BigUint::from(2u32);
 
-     let c = BigUint::from(2u32);
+        let s = params.compute_solution_for_challenge(&k, &c, &x);
+        assert_eq!(s, BigUint::from(9u32));
 
-     let s = params.compute_solution_for_challenge(&k, &c, &x);
-     assert_eq!(s, BigUint::from(9u32));
-
-     let verified = params.verify_solution(&c, &s, &r1, &r2, &y1, &y2);
-     assert!(verified);
-
+        let verified = params.verify_solution(&c, &s, &r1, &r2, &y1, &y2);
+        assert!(verified);
     }
-
 
     #[test]
     fn test_with_random_k_c() {
-     let params = ZKPProtocol {
-        p: BigUint::from(23u32),
-        q: BigUint::from(11u32),
-        g: BigUint::from(4u32),
-        h: BigUint::from(9u32)
-     };
+        let params = ZKPProtocol {
+            p: BigUint::from(23u32),
+            q: BigUint::from(11u32),
+            g: BigUint::from(4u32),
+            h: BigUint::from(9u32),
+        };
 
-     let x = BigUint::from(3u32);
-     let k = generate_random_value(&params.q);
+        let x = BigUint::from(3u32);
+        let k = generate_random_value(&params.q);
 
-     let (y1, y2) = params.compute_public_pair(&x);
-     assert_eq!(y1, BigUint::from(18u32));
-     assert_eq!(y2, BigUint::from(16u32));
+        let (y1, y2) = params.compute_public_pair(&x);
+        assert_eq!(y1, BigUint::from(18u32));
+        assert_eq!(y2, BigUint::from(16u32));
 
-     let (r1, r2) = params.compute_public_pair(&k);
-     let c = generate_random_value(&params.q);
-     let s = params.compute_solution_for_challenge(&k, &c, &x);
-    
-     let verified = params.verify_solution(&c, &s, &r1, &r2, &y1, &y2);
-     assert!(verified);
+        let (r1, r2) = params.compute_public_pair(&k);
+        let c = generate_random_value(&params.q);
+        let s = params.compute_solution_for_challenge(&k, &c, &x);
 
+        let verified = params.verify_solution(&c, &s, &r1, &r2, &y1, &y2);
+        assert!(verified);
     }
 }
