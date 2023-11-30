@@ -7,14 +7,14 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Mutex;
-use tonic::{Code, Response, Status, transport::Server};
+use tonic::{transport::Server, Code, Response, Status};
 use zkp_protocol_ex::chaum_pedersen::*;
 
 use num_bigint::BigUint;
 use zkp_auth::{
-    auth_server::{Auth, AuthServer}, AuthenticationAnswerRequest, AuthenticationAnswerResponse,
-    AuthenticationChallengeRequest, AuthenticationChallengeResponse, RegisterRequest,
-    RegisterResponse,
+    auth_server::{Auth, AuthServer},
+    AuthenticationAnswerRequest, AuthenticationAnswerResponse, AuthenticationChallengeRequest,
+    AuthenticationChallengeResponse, RegisterRequest, RegisterResponse,
 };
 
 #[derive(Default)]
@@ -145,10 +145,13 @@ impl Deref for UserData {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Auth Server");
     let address = "127.0.0.1:8080".parse().unwrap();
     let auth_user = AuthUser::default();
-    Server::builder().add_service(AuthServer::new(auth_user)).serve(address).await.unwrap();
-
+    Server::builder()
+        .add_service(AuthServer::new(auth_user))
+        .serve(address)
+        .await?;
+    Ok(())
 }

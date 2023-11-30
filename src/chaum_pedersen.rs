@@ -1,3 +1,4 @@
+// https://medium.com/asecuritysite-when-bob-met-alice/to-the-builders-of-our-future-meet-the-chaum-pedersen-non-interactive-zero-knowledge-proof-method-9846dee47fbc
 // https://github.com/topics/chaum-pedersen
 // https://crypto.stackexchange.com/questions/99262/chaum-pedersen-protocol
 // group quotient Z/23
@@ -22,6 +23,7 @@ impl ZKPProtocol {
     ///
     /// compute the public information from g, h and the secret password x (done on the prover side)
     /// y1 = g^x mode p and y2 = h^x mod p
+    /// r1 = g^k mod p and r2 = h^k mod p
     ///
     pub fn compute_public_pair(&self, x: &BigUint) -> (BigUint, BigUint) {
         (self.g.modpow(x, &self.p), self.h.modpow(x, &self.p))
