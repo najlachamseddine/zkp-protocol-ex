@@ -6,7 +6,6 @@
 // choose g and h in Q
 
 use num_bigint::{BigUint, RandBigInt};
-use rand::Rng;
 
 pub struct ZKPProtocol {
     /// a large prime order exp: Z/pZ

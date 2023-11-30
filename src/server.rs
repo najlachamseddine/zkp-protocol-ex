@@ -146,12 +146,18 @@ impl Deref for UserData {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Auth Server");
-    let address = "127.0.0.1:8080".parse().unwrap();
+    
+    let address = "127.0.0.1:8083".parse().unwrap();
     let auth_user = AuthUser::default();
     Server::builder()
         .add_service(AuthServer::new(auth_user))
         .serve(address)
         .await?;
+    // env_logger::init();
+    // Builder::new()
+    //     .parse_env(&env::var("ZKP_PROTOCOL_LOG").unwrap_or_default())
+    //     .init();
+    // log::info!("Server is running");
+    print!("Server is running");
     Ok(())
 }

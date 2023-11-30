@@ -1,19 +1,27 @@
 pub mod zkp_auth {
     include!("./zkp_auth.rs");
 }
-
+use env_logger::Builder;
+use std::env;
+use log;
 use num_bigint::BigUint;
 use zkp_protocol_ex::chaum_pedersen::*;
 use zkp_auth::{auth_client::AuthClient, RegisterRequest, AuthenticationChallengeRequest, AuthenticationAnswerRequest};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Client");
+    env_logger::init();
+    // Builder::new()
+    //     .parse_env(&env::var("ZKP_PROTOCOL_LOG").unwrap_or_default())
+    //     .init();
+    log::info!("Client UP");
+    log::debug!("Client UP");
     // register
     // challenge request
     // verify request
+    
 
-    let mut client = AuthClient::connect("http://127.0.0.1:8080").await.unwrap();
+    let mut client = AuthClient::connect("http://127.0.0.1:8083").await?;
     let protocol = get_fixed_zkp_params();
     let user = "najla".to_string();
     let x_password = BigUint::from(3u32);
