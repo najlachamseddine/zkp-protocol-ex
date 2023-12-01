@@ -146,7 +146,6 @@ impl Deref for UserData {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    
     let address = "127.0.0.1:8080".parse().unwrap();
     let auth_user = AuthUser::default();
     Server::builder()
