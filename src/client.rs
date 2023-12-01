@@ -1,7 +1,7 @@
 pub mod zkp_auth {
     include!("./zkp_auth.rs");
 }
-use env_logger::Builder;
+use env_logger;
 use std::env;
 use log;
 use num_bigint::BigUint;
