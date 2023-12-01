@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  protocolclient:
+    build:
+      context: .
+      dockerfile: "./Dockerfile.client"
+    # volumes: 
+    #   - /zkp-protocol-ex:/zkp-protocol-app/
+    environment:
+      - USER=tester
+    container_name: protocolclient

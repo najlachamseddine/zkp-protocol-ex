@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  protocolserver:
+    build:
+      context: .
+      dockerfile: "./Dockerfile.server"
+    # volumes: 
+    #   - /home/najla/dev/projects_rust/zkp-protocol-ex:/zkp-protocol-app/
+    environment:
+      - USER=tester
+    container_name: protocolserver
+    expose: 
+      - 8080
+    ports:
+      - "8080:8080"
