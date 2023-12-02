@@ -1,40 +1,38 @@
-version: "3.8"
+version: '3.7'
 
 services:
   protocolserver:
     build:
       context: ./
       dockerfile: docker/Dockerfile.server
-    # volumes: 
-    #   - /home/najla/dev/projects_rust/zkp-protocol-ex:/zkp-protocol-app/
     environment:
-      - USER=tester
+      - SERVER_HOST=0.0.0.0
+    image: protocolserver
     container_name: protocolserver
-    expose: 
-      - 5001
+    expose:
+      - 8080
     ports:
       - "8080:8080"
-    # networks:
-    #   - zkpprotocol_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    network_mode: 'host'
+
   
   protocolclient:
     build:
       context: ./
       dockerfile: docker/Dockerfile.client
-    # volumes: 
-    #   - /zkp-protocol-ex:/zkp-protocol-app/
-    environment:
-      - USER=tester
+      args:
+        SERVER_URL: "http://127.0.0.1:8080"
+    image: protocolclient
     container_name: protocolclient
     depends_on:
       - protocolserver
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    network_mode: 'host'
     restart: always
-    # networks:
-    #   - zkpprotocol_network
 
-  # networks:
-  #   zkpprotocol_network:
-  #     driver: bridge
       
 
 

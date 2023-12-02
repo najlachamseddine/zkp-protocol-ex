@@ -3,8 +3,9 @@ pub mod zkp_auth {
 }
 use env_logger;
 use log;
-use num_bigint::BigUint;
 use std::env;
+use tonic::transport::Uri;
+use num_bigint::BigUint;
 use zkp_auth::{
     auth_client::AuthClient, AuthenticationAnswerRequest, AuthenticationChallengeRequest,
     RegisterRequest,
@@ -13,17 +14,19 @@ use zkp_protocol_ex::chaum_pedersen::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    // env_logger::init();
     // Builder::new()
     //     .parse_env(&env::var("ZKP_PROTOCOL_LOG").unwrap_or_default())
     //     .init();
-    log::info!("Client UP");
-    log::debug!("Client UP");
+    // log::info!("Client UP");
+    // log::debug!("Client UP");
     // register
     // challenge request
     // verify request
-
-    let mut client = AuthClient::connect("http://127.0.0.1:8083").await?;
+    let args: Vec<String> = env::args().collect();
+    let url = format!("{}",&args[2].to_string());
+    println!("URL {}", url.clone());
+    let mut client = AuthClient::connect(url).await.map_err(|e| {e}).expect("Could not connect to the server");
     let protocol = get_fixed_zkp_params();
     let user = "najla".to_string();
     let x_password = BigUint::from(3u32);
