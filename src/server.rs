@@ -2,8 +2,8 @@ pub mod zkp_auth {
     include!("./zkp_auth.rs");
 }
 
-use curve25519_dalek::RistrettoPoint;
 use curve25519_dalek::ristretto::CompressedRistretto;
+use curve25519_dalek::RistrettoPoint;
 use log::info;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -13,7 +13,10 @@ use std::sync::Mutex;
 use tonic::{transport::Server, Code, Response, Status};
 use zkp_protocol_ex::chaum_pedersen::*;
 
+use curve25519_dalek::Scalar;
 use num_bigint::BigUint;
+use sha2::Sha512;
+use sha3::Sha3_512;
 use zkp_auth::{
     auth_server::{Auth, AuthServer},
     AuthenticationAnswerRequest, AuthenticationAnswerResponse, AuthenticationChallengeRequest,
@@ -21,9 +24,6 @@ use zkp_auth::{
     PedersenCommitmentRequest, PedersenCommitmentResponse, RegisterRequest, RegisterResponse,
 };
 use zkp_protocol_ex::pedersen_elliptic_curve::pedersen_setup_base_points;
-use sha3::Sha3_512;
-use curve25519_dalek::Scalar;
-use sha2::Sha512;
 
 #[derive(Default)]
 pub struct AuthUser {
@@ -61,7 +61,7 @@ impl Auth for AuthUser {
         };
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if user_info_map.get(&user).is_none() {
-        user_info_map.insert(user, user_data);
+            user_info_map.insert(user, user_data);
         }
 
         Ok(Response::new(RegisterResponse {}))
@@ -73,7 +73,10 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<AuthenticationChallengeResponse>, tonic::Status> {
         let req_data = request.into_inner();
         let user = req_data.user;
-        info!("Exponentiation auth: create authentication challenge for user {}", user);
+        info!(
+            "Exponentiation auth: create authentication challenge for user {}",
+            user
+        );
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if let Some(user_data) = user_info_map.get_mut(&user) {
             let protocol = get_fixed_zkp_params();
@@ -103,12 +106,19 @@ impl Auth for AuthUser {
         let req = request.into_inner();
         let s = req.s;
         let auth_id = req.auth_id;
-        info!("Exponentiation auth: verify authentication  for auth_id {}", auth_id);
+        info!(
+            "Exponentiation auth: verify authentication  for auth_id {}",
+            auth_id
+        );
         let auth_id_map = self.auth_id_map.lock().unwrap();
         if let Some(u) = auth_id_map.get(&auth_id) {
             let user_info_map = &mut self.user_info_map.lock().unwrap();
             if let Some(user_data) = user_info_map.get_mut(u) {
-                info!("Exponentiation auth: user {} found for auth_id {}", user_data.user.clone(), auth_id);
+                info!(
+                    "Exponentiation auth: user {} found for auth_id {}",
+                    user_data.user.clone(),
+                    auth_id
+                );
                 let protocol = get_fixed_zkp_params();
                 let verified = protocol.verify_solution(
                     &user_data.c,
@@ -146,13 +156,17 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<PedersenCommitmentResponse>, tonic::Status> {
         let req_data = request.into_inner();
         let user = req_data.user;
-        info!("Elliptic curve auth: user {} sends pedersen commitment", user);
-        let commitment = CompressedRistretto::from_slice(req_data.compressed_commitment.as_slice()).unwrap();
+        info!(
+            "Elliptic curve auth: user {} sends pedersen commitment",
+            user
+        );
+        let commitment =
+            CompressedRistretto::from_slice(req_data.compressed_commitment.as_slice()).unwrap();
         info!("Elliptic curve: commitment length: {:#?}", commitment);
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if let Some(user_data) = user_info_map.get_mut(&user) {
             if let Some(c) = CompressedRistretto::decompress(&commitment) {
-            user_data.pedersen_commitment = c;
+                user_data.pedersen_commitment = c;
             }
             let auth_id = create_random_string();
             let auth_id_map = &mut self.auth_id_map.lock().unwrap();
@@ -173,17 +187,24 @@ impl Auth for AuthUser {
         let auth_id = req.auth_id;
         let r: [u8; 32] = req.r.as_slice().try_into().unwrap();
         let m: [u8; 32] = req.m.as_slice().try_into().unwrap();
-        info!("Elliptic curve auth: user with auth_id {} opens the commitment", auth_id);
+        info!(
+            "Elliptic curve auth: user with auth_id {} opens the commitment",
+            auth_id
+        );
         let auth_id_map = self.auth_id_map.lock().unwrap();
         if let Some(u) = auth_id_map.get(&auth_id) {
             let user_info_map = &mut self.user_info_map.lock().unwrap();
             if let Some(user_data) = user_info_map.get_mut(u) {
-                info!("Elliptic auth: user {} found for auth_id {}", user_data.user.clone(), auth_id);
+                info!(
+                    "Elliptic auth: user {} found for auth_id {}",
+                    user_data.user.clone(),
+                    auth_id
+                );
                 let zkpelliptic = pedersen_setup_base_points();
                 let s = Scalar::from_canonical_bytes(r).unwrap();
                 let t = Scalar::from_canonical_bytes(m).unwrap();
-                println!("blinding: {:#?}",  s);
-                println!("secret: {:#?}",  t);
+                println!("blinding: {:#?}", s);
+                println!("secret: {:#?}", t);
                 let verified = zkpelliptic.verify_commitment(user_data.pedersen_commitment, s, t);
                 if !verified {
                     return Err(Status::new(
@@ -199,12 +220,11 @@ impl Auth for AuthUser {
                 Code::Unauthenticated,
                 format!("Authentication ID: {} not found in database", auth_id),
             ));
-        }
-            else {
-                Err(Status::new(
-                    Code::Unauthenticated,
-                    format!("Authentication ID: {} not found in database", auth_id),
-                ))
+        } else {
+            Err(Status::new(
+                Code::Unauthenticated,
+                format!("Authentication ID: {} not found in database", auth_id),
+            ))
         }
     }
 }

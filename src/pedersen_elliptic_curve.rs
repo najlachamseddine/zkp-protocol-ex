@@ -1,9 +1,9 @@
 // https://findora.org/faq/crypto/pedersen-commitment-with-elliptic-curves/#:~:text=A%20Pedersen%20commitment%20is%20a,information%20at%20all%20about%20m.
 
 // use bulletproofs::PedersenGens;
+use curve25519_dalek::constants;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
-use curve25519_dalek::constants;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::MultiscalarMul;
@@ -36,7 +36,7 @@ impl ZKPEllipticCurve {
         commitment_opening: Scalar,
         x_password: Scalar,
     ) -> bool {
-        let c = self.pedersen_commit( x_password, commitment_opening);
+        let c = self.pedersen_commit(x_password, commitment_opening);
         // println!("--------commitment COMPUTED {:#?}",  c);
         // println!("--------commitment STORED {:#?}",  commitment);
         c == commitment

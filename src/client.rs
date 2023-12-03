@@ -11,14 +11,12 @@ use zkp_auth::{
 };
 use zkp_protocol_ex::{
     chaum_pedersen::*,
-    pedersen_elliptic_curve::{
-     pedersen_setup_base_points, ZKPEllipticCurve,
-    },
+    pedersen_elliptic_curve::{pedersen_setup_base_points, ZKPEllipticCurve},
 };
 
 enum AuthType {
     Exponentiation,
-    EllipticCurve
+    EllipticCurve,
 }
 
 #[tokio::main]
@@ -48,6 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match authentication_type {
         AuthType::Exponentiation => {
+            println!("Authentication type: exponentiation");
             println!("✅ Client requests a challenge");
             let k = generate_random_value(&protocol.q);
             let (r1, r2) = protocol.compute_public_pair(&k);
@@ -71,10 +70,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 s: s.to_bytes_be(),
             });
             let auth_response = client.verify_authentication(request_auth).await?;
-           
+
             println!("✅ Session ID {:#?}", auth_response.into_inner().session_id);
         }
         AuthType::EllipticCurve => {
+            println!("Authentication type: elliptic curve");
             println!("✅ Client sends the commitment");
             let x_password = Scalar::from(x);
             let mut zkpelliptic = pedersen_setup_base_points();
@@ -101,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             // println!("secret {:#?}",  secret);
             let commitment_opening_response =
                 client.open_commitment(request_commitment_opening).await?;
-            
+
             println!(
                 "✅ Session ID {:#?}",
                 commitment_opening_response.into_inner().session_id
