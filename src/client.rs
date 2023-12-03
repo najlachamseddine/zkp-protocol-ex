@@ -3,8 +3,6 @@ pub mod zkp_auth {
 }
 
 use curve25519_dalek::{scalar::Scalar, RistrettoPoint};
-use env_logger;
-use log::info;
 use num_bigint::BigUint;
 use std::env;
 use zkp_auth::{
@@ -33,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| e)
         .expect("Could not connect to the server");
     let protocol = get_fixed_zkp_params();
-    let user = "najla".to_string();
+    let user = "USER_NAME".to_string();
     let x = 123624374743u64;
     let x_password = BigUint::from(x);
     let (y1, y2) = protocol.compute_public_pair(&x_password);
@@ -46,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let _ = client.register(request_register).await?;
 
-    let authentication_type = AuthType::Exponentiation;
+    let authentication_type = AuthType::EllipticCurve;
 
     match authentication_type {
         AuthType::Exponentiation => {
@@ -79,17 +77,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         AuthType::EllipticCurve => {
             println!("✅ Client sends the commitment");
             let x_password = Scalar::from(x);
-            let pc_gens = pedersen_setup_base_points();
-            let mut zkpelliptic = ZKPEllipticCurve {
-                g: pc_gens.g,
-                h: pc_gens.h,
-            };
+            let mut zkpelliptic = pedersen_setup_base_points();
             let (commitment, blinding_factor, secret) = zkpelliptic.commit(x_password);
+            // println!("commitment client {:#?}",  commitment);
             let compressed_commitment = RistrettoPoint::compress(&commitment).to_bytes().to_vec();
             let request_set_commitment = tonic::Request::new(PedersenCommitmentRequest {
                 user: user.clone(),
-                compressed_commitment,
+                compressed_commitment: compressed_commitment.clone(),
             });
+            // println!("{:#?}", compressed_commitment.clone());
             let set_commitment_response = client
                 .send_pedersen_commitment(request_set_commitment)
                 .await?;
@@ -101,11 +97,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 r: blinding_factor.to_bytes().to_vec(),
                 m: secret.to_bytes().to_vec(),
             });
+            // println!("blinding {:#?}",  blinding_factor);
+            // println!("secret {:#?}",  secret);
             let commitment_opening_response =
                 client.open_commitment(request_commitment_opening).await?;
             
             println!(
-                "Session ID {:#?}",
+                "✅ Session ID {:#?}",
                 commitment_opening_response.into_inner().session_id
             );
         }
@@ -113,4 +111,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     Ok(())
 }
-

@@ -3,6 +3,7 @@ pub mod zkp_auth {
 }
 
 use curve25519_dalek::RistrettoPoint;
+use curve25519_dalek::ristretto::CompressedRistretto;
 use log::info;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -19,7 +20,7 @@ use zkp_auth::{
     AuthenticationChallengeResponse, CommitmentOpeningRequest, CommitmentOpeningResponse,
     PedersenCommitmentRequest, PedersenCommitmentResponse, RegisterRequest, RegisterResponse,
 };
-use zkp_protocol_ex::pedersen_elliptic_curve::{ZKPEllipticCurve, pedersen_setup_base_points};
+use zkp_protocol_ex::pedersen_elliptic_curve::pedersen_setup_base_points;
 use sha3::Sha3_512;
 use curve25519_dalek::Scalar;
 use sha2::Sha512;
@@ -30,14 +31,13 @@ pub struct AuthUser {
     auth_id_map: Mutex<HashMap<String, String>>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Default)]
 pub struct UserData {
     user: String,
     y1: BigUint,
     y2: BigUint,
     r1: BigUint,
     r2: BigUint,
-    // k: BigUint,
     c: BigUint,
     s: BigUint,
     pedersen_commitment: RistrettoPoint,
@@ -103,11 +103,12 @@ impl Auth for AuthUser {
         let req = request.into_inner();
         let s = req.s;
         let auth_id = req.auth_id;
-        info!("Exponentiation auth: verify authentication for auth_id {}", auth_id);
+        info!("Exponentiation auth: verify authentication  for auth_id {}", auth_id);
         let auth_id_map = self.auth_id_map.lock().unwrap();
         if let Some(u) = auth_id_map.get(&auth_id) {
             let user_info_map = &mut self.user_info_map.lock().unwrap();
             if let Some(user_data) = user_info_map.get_mut(u) {
+                info!("Exponentiation auth: user {} found for auth_id {}", user_data.user.clone(), auth_id);
                 let protocol = get_fixed_zkp_params();
                 let verified = protocol.verify_solution(
                     &user_data.c,
@@ -145,12 +146,17 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<PedersenCommitmentResponse>, tonic::Status> {
         let req_data = request.into_inner();
         let user = req_data.user;
-        info!("Elliptic auth: user {} sends pedersen commitment", user);
-        let commitment = req_data.compressed_commitment;
+        info!("Elliptic curve auth: user {} sends pedersen commitment", user);
+        let commitment = CompressedRistretto::from_slice(req_data.compressed_commitment.as_slice()).unwrap();
+        info!("Elliptic curve: commitment length: {:#?}", commitment);
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if let Some(user_data) = user_info_map.get_mut(&user) {
-            user_data.pedersen_commitment = RistrettoPoint::hash_from_bytes::<Sha3_512>(&commitment);
+            if let Some(c) = CompressedRistretto::decompress(&commitment) {
+            user_data.pedersen_commitment = c;
+            }
             let auth_id = create_random_string();
+            let auth_id_map = &mut self.auth_id_map.lock().unwrap();
+            auth_id_map.insert(auth_id.clone(), user);
             return Ok(Response::new(PedersenCommitmentResponse { auth_id }));
         }
         Err(Status::new(
@@ -165,19 +171,20 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<CommitmentOpeningResponse>, tonic::Status> {
         let req = request.into_inner();
         let auth_id = req.auth_id;
-        let r = req.r;
-        let m = req.m;
-        info!("Exponentiation auth: user with auth_id {} opens the commitment", auth_id);
+        let r: [u8; 32] = req.r.as_slice().try_into().unwrap();
+        let m: [u8; 32] = req.m.as_slice().try_into().unwrap();
+        info!("Elliptic curve auth: user with auth_id {} opens the commitment", auth_id);
         let auth_id_map = self.auth_id_map.lock().unwrap();
         if let Some(u) = auth_id_map.get(&auth_id) {
             let user_info_map = &mut self.user_info_map.lock().unwrap();
             if let Some(user_data) = user_info_map.get_mut(u) {
-                let pc_gens = pedersen_setup_base_points();
-                let zkpelliptic = ZKPEllipticCurve {
-                    g: pc_gens.g,
-                    h: pc_gens.h,
-                };
-                let verified = zkpelliptic.verify_commitment(user_data.pedersen_commitment, Scalar::hash_from_bytes::<Sha512>(&r), Scalar::hash_from_bytes::<Sha512>(&m));
+                info!("Elliptic auth: user {} found for auth_id {}", user_data.user.clone(), auth_id);
+                let zkpelliptic = pedersen_setup_base_points();
+                let s = Scalar::from_canonical_bytes(r).unwrap();
+                let t = Scalar::from_canonical_bytes(m).unwrap();
+                println!("blinding: {:#?}",  s);
+                println!("secret: {:#?}",  t);
+                let verified = zkpelliptic.verify_commitment(user_data.pedersen_commitment, s, t);
                 if !verified {
                     return Err(Status::new(
                         Code::PermissionDenied,

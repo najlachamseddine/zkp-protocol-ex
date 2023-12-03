@@ -11,6 +11,7 @@ use rand_core::OsRng;
 use sha3::Sha3_512;
 
 // https://doc-internal.dalek.rs/src/bulletproofs/generators.rs.html#28-33
+#[derive(Debug)]
 pub struct ZKPEllipticCurve {
     // pedersen setup base points G and H
     // we can also use directly the type PedersenGens instead of breaking it down and call commit p.commit on PedersenGens
@@ -25,7 +26,7 @@ impl ZKPEllipticCurve {
 
     pub fn commit(&mut self, x_password: Scalar) -> (RistrettoPoint, Scalar, Scalar) {
         let r = random_blinding_factor();
-        let commitment = self.pedersen_commit(r, x_password);
+        let commitment = self.pedersen_commit(x_password, r);
         (commitment, r, x_password)
     }
 
@@ -35,7 +36,9 @@ impl ZKPEllipticCurve {
         commitment_opening: Scalar,
         x_password: Scalar,
     ) -> bool {
-        let c = self.pedersen_commit(commitment_opening, x_password);
+        let c = self.pedersen_commit( x_password, commitment_opening);
+        // println!("--------commitment COMPUTED {:#?}",  c);
+        // println!("--------commitment STORED {:#?}",  commitment);
         c == commitment
     }
 }
