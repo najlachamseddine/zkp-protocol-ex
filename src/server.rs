@@ -2,6 +2,8 @@ pub mod zkp_auth {
     include!("./zkp_auth.rs");
 }
 
+use curve25519_dalek::RistrettoPoint;
+use log::info;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
@@ -14,8 +16,13 @@ use num_bigint::BigUint;
 use zkp_auth::{
     auth_server::{Auth, AuthServer},
     AuthenticationAnswerRequest, AuthenticationAnswerResponse, AuthenticationChallengeRequest,
-    AuthenticationChallengeResponse, RegisterRequest, RegisterResponse,
+    AuthenticationChallengeResponse, CommitmentOpeningRequest, CommitmentOpeningResponse,
+    PedersenCommitmentRequest, PedersenCommitmentResponse, RegisterRequest, RegisterResponse,
 };
+use zkp_protocol_ex::pedersen_elliptic_curve::{ZKPEllipticCurve, pedersen_setup_base_points};
+use sha3::Sha3_512;
+use curve25519_dalek::Scalar;
+use sha2::Sha512;
 
 #[derive(Default)]
 pub struct AuthUser {
@@ -33,6 +40,7 @@ pub struct UserData {
     // k: BigUint,
     c: BigUint,
     s: BigUint,
+    pedersen_commitment: RistrettoPoint,
     session_id: String,
 }
 
@@ -44,6 +52,7 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<RegisterResponse>, tonic::Status> {
         let req_data = request.into_inner();
         let user = req_data.user;
+        info!("Register user {}", user);
         let user_data = UserData {
             user: user.clone(),
             y1: BigUint::from_bytes_be(&req_data.y1),
@@ -51,7 +60,9 @@ impl Auth for AuthUser {
             ..Default::default()
         };
         let user_info_map = &mut self.user_info_map.lock().unwrap();
+        if user_info_map.get(&user).is_none() {
         user_info_map.insert(user, user_data);
+        }
 
         Ok(Response::new(RegisterResponse {}))
     }
@@ -62,6 +73,7 @@ impl Auth for AuthUser {
     ) -> std::result::Result<tonic::Response<AuthenticationChallengeResponse>, tonic::Status> {
         let req_data = request.into_inner();
         let user = req_data.user;
+        info!("Exponentiation auth: create authentication challenge for user {}", user);
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if let Some(user_data) = user_info_map.get_mut(&user) {
             let protocol = get_fixed_zkp_params();
@@ -91,6 +103,7 @@ impl Auth for AuthUser {
         let req = request.into_inner();
         let s = req.s;
         let auth_id = req.auth_id;
+        info!("Exponentiation auth: verify authentication for auth_id {}", auth_id);
         let auth_id_map = self.auth_id_map.lock().unwrap();
         if let Some(u) = auth_id_map.get(&auth_id) {
             let user_info_map = &mut self.user_info_map.lock().unwrap();
@@ -107,7 +120,7 @@ impl Auth for AuthUser {
                 if !verified {
                     return Err(Status::new(
                         Code::NotFound,
-                        format!("User: {} not found in database", u),
+                        format!("Challenge error: {} not found in database", u),
                     ));
                 }
                 let session_id = create_random_string();
@@ -124,6 +137,67 @@ impl Auth for AuthUser {
                 Code::Unauthenticated,
                 format!("Authentication ID: {} not found in database", auth_id),
             ))
+        }
+    }
+    async fn send_pedersen_commitment(
+        &self,
+        request: tonic::Request<PedersenCommitmentRequest>,
+    ) -> std::result::Result<tonic::Response<PedersenCommitmentResponse>, tonic::Status> {
+        let req_data = request.into_inner();
+        let user = req_data.user;
+        info!("Elliptic auth: user {} sends pedersen commitment", user);
+        let commitment = req_data.compressed_commitment;
+        let user_info_map = &mut self.user_info_map.lock().unwrap();
+        if let Some(user_data) = user_info_map.get_mut(&user) {
+            user_data.pedersen_commitment = RistrettoPoint::hash_from_bytes::<Sha3_512>(&commitment);
+            let auth_id = create_random_string();
+            return Ok(Response::new(PedersenCommitmentResponse { auth_id }));
+        }
+        Err(Status::new(
+            Code::NotFound,
+            format!("User with a: {} not found in database", user),
+        ))
+    }
+
+    async fn open_commitment(
+        &self,
+        request: tonic::Request<CommitmentOpeningRequest>,
+    ) -> std::result::Result<tonic::Response<CommitmentOpeningResponse>, tonic::Status> {
+        let req = request.into_inner();
+        let auth_id = req.auth_id;
+        let r = req.r;
+        let m = req.m;
+        info!("Exponentiation auth: user with auth_id {} opens the commitment", auth_id);
+        let auth_id_map = self.auth_id_map.lock().unwrap();
+        if let Some(u) = auth_id_map.get(&auth_id) {
+            let user_info_map = &mut self.user_info_map.lock().unwrap();
+            if let Some(user_data) = user_info_map.get_mut(u) {
+                let pc_gens = pedersen_setup_base_points();
+                let zkpelliptic = ZKPEllipticCurve {
+                    g: pc_gens.g,
+                    h: pc_gens.h,
+                };
+                let verified = zkpelliptic.verify_commitment(user_data.pedersen_commitment, Scalar::hash_from_bytes::<Sha512>(&r), Scalar::hash_from_bytes::<Sha512>(&m));
+                if !verified {
+                    return Err(Status::new(
+                        Code::PermissionDenied,
+                        format!("Error while validating the commitment"),
+                    ));
+                }
+                let session_id = create_random_string();
+                user_data.session_id = session_id.clone();
+                return Ok(Response::new(CommitmentOpeningResponse { session_id }));
+            }
+            return Err(Status::new(
+                Code::Unauthenticated,
+                format!("Authentication ID: {} not found in database", auth_id),
+            ));
+        }
+            else {
+                Err(Status::new(
+                    Code::Unauthenticated,
+                    format!("Authentication ID: {} not found in database", auth_id),
+                ))
         }
     }
 }
@@ -146,17 +220,15 @@ impl Deref for UserData {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Running the server");
+    env_logger::init();
+    info!("Running the server");
     let address = "127.0.0.1:8080".parse().expect("Wrong server url");
     let auth_user = AuthUser::default();
     Server::builder()
         .add_service(AuthServer::new(auth_user))
         .serve(address)
-        .await.map_err(|e| {e}).expect("Could not start the server");
-    // env_logger::init();
-    // Builder::new()
-    //     .parse_env(&env::var("ZKP_PROTOCOL_LOG").unwrap_or_default())
-    //     .init();
-    // log::info!("Server is running");
+        .await
+        .map_err(|e| e)
+        .expect("Could not start the server");
     Ok(())
 }

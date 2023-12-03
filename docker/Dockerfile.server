@@ -12,7 +12,7 @@ RUN apt update
 RUN apt install -y protobuf-compiler
 
 RUN cargo install --bin server --path .
-ENTRYPOINT [ "server" ]
+CMD RUST_LOG=info server
 
 # $ rustup show
 # RUN cargo intall --bin server --path .

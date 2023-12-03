@@ -24,6 +24,25 @@ string auth_id = 1;
 bytes s = 2;
 }
 
+message PedersenCommitmentRequest {
+    string user =  1;
+    bytes compressed_commitment = 2;
+}
+
+message PedersenCommitmentResponse {
+    string auth_id = 1;
+}
+
+message CommitmentOpeningRequest {
+    string auth_id =  1;
+    bytes r = 2;
+    bytes m = 3;
+}
+
+message CommitmentOpeningResponse {
+    string session_id = 1;
+}
+
 message AuthenticationAnswerResponse {
 string session_id = 1;
 }
@@ -32,4 +51,6 @@ service Auth {
 rpc Register(RegisterRequest) returns (RegisterResponse) {}
 rpc CreateAuthenticationChallenge(AuthenticationChallengeRequest) returns (AuthenticationChallengeResponse) {}
 rpc VerifyAuthentication(AuthenticationAnswerRequest) returns (AuthenticationAnswerResponse) {}
+rpc SendPedersenCommitment(PedersenCommitmentRequest) returns (PedersenCommitmentResponse) {}
+rpc OpenCommitment(CommitmentOpeningRequest) returns (CommitmentOpeningResponse) {}
 }

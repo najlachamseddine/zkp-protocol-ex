@@ -39,6 +39,36 @@ pub struct AuthenticationAnswerRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PedersenCommitmentRequest {
+    #[prost(string, tag = "1")]
+    pub user: ::prost::alloc::string::String,
+    #[prost(bytes = "vec", tag = "2")]
+    pub compressed_commitment: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PedersenCommitmentResponse {
+    #[prost(string, tag = "1")]
+    pub auth_id: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CommitmentOpeningRequest {
+    #[prost(string, tag = "1")]
+    pub auth_id: ::prost::alloc::string::String,
+    #[prost(bytes = "vec", tag = "2")]
+    pub r: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub m: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CommitmentOpeningResponse {
+    #[prost(string, tag = "1")]
+    pub session_id: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AuthenticationAnswerResponse {
     #[prost(string, tag = "1")]
     pub session_id: ::prost::alloc::string::String,
@@ -202,6 +232,56 @@ pub mod auth_client {
                 .insert(GrpcMethod::new("zkp_auth.Auth", "VerifyAuthentication"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn send_pedersen_commitment(
+            &mut self,
+            request: impl tonic::IntoRequest<super::PedersenCommitmentRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::PedersenCommitmentResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/zkp_auth.Auth/SendPedersenCommitment",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("zkp_auth.Auth", "SendPedersenCommitment"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn open_commitment(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CommitmentOpeningRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CommitmentOpeningResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/zkp_auth.Auth/OpenCommitment",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("zkp_auth.Auth", "OpenCommitment"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -230,6 +310,20 @@ pub mod auth_server {
             request: tonic::Request<super::AuthenticationAnswerRequest>,
         ) -> std::result::Result<
             tonic::Response<super::AuthenticationAnswerResponse>,
+            tonic::Status,
+        >;
+        async fn send_pedersen_commitment(
+            &self,
+            request: tonic::Request<super::PedersenCommitmentRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::PedersenCommitmentResponse>,
+            tonic::Status,
+        >;
+        async fn open_commitment(
+            &self,
+            request: tonic::Request<super::CommitmentOpeningRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CommitmentOpeningResponse>,
             tonic::Status,
         >;
     }
@@ -439,6 +533,98 @@ pub mod auth_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = VerifyAuthenticationSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/zkp_auth.Auth/SendPedersenCommitment" => {
+                    #[allow(non_camel_case_types)]
+                    struct SendPedersenCommitmentSvc<T: Auth>(pub Arc<T>);
+                    impl<
+                        T: Auth,
+                    > tonic::server::UnaryService<super::PedersenCommitmentRequest>
+                    for SendPedersenCommitmentSvc<T> {
+                        type Response = super::PedersenCommitmentResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::PedersenCommitmentRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Auth>::send_pedersen_commitment(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SendPedersenCommitmentSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/zkp_auth.Auth/OpenCommitment" => {
+                    #[allow(non_camel_case_types)]
+                    struct OpenCommitmentSvc<T: Auth>(pub Arc<T>);
+                    impl<
+                        T: Auth,
+                    > tonic::server::UnaryService<super::CommitmentOpeningRequest>
+                    for OpenCommitmentSvc<T> {
+                        type Response = super::CommitmentOpeningResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CommitmentOpeningRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as Auth>::open_commitment(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = OpenCommitmentSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
