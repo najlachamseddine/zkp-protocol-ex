@@ -11,7 +11,7 @@ use zkp_auth::{
 };
 use zkp_protocol_ex::{
     chaum_pedersen::*,
-    pedersen_elliptic_curve::{pedersen_setup_base_points},
+    pedersen_elliptic_curve::pedersen_setup_base_points,
 };
 
 enum AuthType {
