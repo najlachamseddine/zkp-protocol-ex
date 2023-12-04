@@ -1,4 +1,4 @@
-# zkp protocol: exponentiatioon and elliptic curve authentication
+# zkp protocol: exponentiation and elliptic curve authentication
 
 This is a client/server application for authentication based on exponentiation and elliptic curve.
 
@@ -45,7 +45,7 @@ async fn open_commitment(...){}
 Running the `server` needs to execute the command below command in the `local-deploy` repository.
 
 ```
-sudo sh server.sh
+sh server.sh
 ```
 
 Or directly in the root of the project:
@@ -57,7 +57,7 @@ RUST_LOG=info cargo run --bin server
 Running the `client` needs to execute the command below command in the `local-deploy` repository.
 
 ```
-sudo sh client.sh
+sh client.sh
 ```
 Or directly in the root of the project:
 ```
