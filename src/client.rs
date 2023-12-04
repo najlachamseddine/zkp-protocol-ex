@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // For big number (not tested yet)
     // let protocol = generate_1024bit_group_with_160bit_constants();
     let protocol = get_fixed_zkp_params();
-    let user = "USER_NAME".to_string();
+    let user = "USER_NAME_TO_ENTER".to_string();
     let x = 123624374743u64;
     let x_password = BigUint::from(x);
     let (y1, y2) = protocol.compute_public_pair(&x_password);
