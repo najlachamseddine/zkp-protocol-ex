@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = client.register(request_register).await?;
 
     // Choosing between Exponentiation or Elliptic curve authentication (uncomment one)
-    // let authentication_type = AuthType::Exponentiation;
+    // let authentication_type = AuthType::EllipticCurve;
     let authentication_type = AuthType::Exponentiation;
 
     match authentication_type {
