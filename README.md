@@ -40,6 +40,8 @@ async fn open_commitment(...){}
 
 # Local deployment
 
+`Cargo` rust tool is used to build and run the package.
+
 Running the server needs to execute the command below command in the `local-deploy` repository.
 
 ```
