@@ -42,17 +42,29 @@ async fn open_commitment(...){}
 
 `Cargo` rust tool is used to build and run the package.
 
-Running the server needs to execute the command below command in the `local-deploy` repository.
+Running the `server` needs to execute the command below command in the `local-deploy` repository.
 
 ```
 sudo sh server.sh
 ```
 
-Running the client needs to execute the command below command in the `local-deploy` repository.
+Or directly in the root of the project:
+```
+cargo clean
+RUST_LOG=info cargo run --bin server
+```
+
+Running the `client` needs to execute the command below command in the `local-deploy` repository.
 
 ```
 sudo sh client.sh
 ```
+Or directly in the root of the project:
+```
+cargo run --bin client -- --url "http://127.0.0.1:8080/"
+```
+
+
 The client side must be in an interactive mode with a UI supporting the API. For simplicity, the client will here execute the requests sequentially without external interaction. Entering the username for example could be done by asking the user to enter their name in a terminal and then read it on the client side.
 On the client side, you can choose the type of authentication to run. This is done in the `client.rs` file, in the `main()` function which is simulating the user/interface behavior.
 
