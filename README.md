@@ -80,8 +80,8 @@ The docker compose will create two services `protocolserver` and `protocolclient
 
 To see the logs run:
 ```
-sudo docker logs procolserver
-sudo docker logs procolclient
+sudo docker logs protocolserver
+sudo docker logs protocolclient
 ```
 As the client is simulating a UI, the container will restart after each call to the `main()`
 
@@ -94,7 +94,7 @@ As the client is simulating a UI, the container will restart after each call to 
 * Use a client who is interacting 
 * Write benchmark with multiple users connecting at the same time (cargo bench can be used) using tokio:spawn
 * Test the bigUint value in the exponentiation authentication (function provided but not tested)
-* 
+* Optimize the docker images (space, remove rust tools, source code)
 
 
 
