@@ -32,7 +32,7 @@ async fn register(...){}
 async fn create_authentication_challenge(...){}
 async fn verify_authentication(...){}
 
-// For exponentiation type
+// For elliptic curve type
 async fn send_pedersen_commitment(...){}
 async fn open_commitment(...){}
 
@@ -42,7 +42,7 @@ async fn open_commitment(...){}
 
 `Cargo` rust tool is used to build and run the package.
 
-Running the `server` needs to execute the command below command in the `local-deploy` repository.
+Running the `server` needs to execute the below command in the `local-deploy` repository.
 
 ```
 sh server.sh
