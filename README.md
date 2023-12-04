@@ -86,7 +86,7 @@ sudo docker logs protocolclient
 As the client is simulating a UI, the container will restart after each call to the `main()`
 
 
-# Improvments
+# Improvements
 
 * More tests. The server can also be mocked with the mockall rust feature and using expectation for the returning functions.
 * Better logging (info, error, warn)
