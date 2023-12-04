@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| e)
         .expect("Could not connect to the server");
 
-    // For big number:
+    // For big number (not tested yet)
     // let protocol = generate_1024bit_group_with_160bit_constants();
     let protocol = get_fixed_zkp_params();
     let user = "USER_NAME".to_string();

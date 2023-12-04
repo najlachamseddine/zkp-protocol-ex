@@ -77,6 +77,7 @@ impl Auth for AuthUser {
         );
         let user_info_map = &mut self.user_info_map.lock().unwrap();
         if let Some(user_data) = user_info_map.get_mut(&user) {
+            // let protocol = generate_1024bit_group_with_160bit_constants();
             let protocol = get_fixed_zkp_params();
             let challenge = generate_random_value(&protocol.q);
             user_data.r1 = BigUint::from_bytes_be(&req_data.r1);
