@@ -37,8 +37,6 @@ impl ZKPEllipticCurve {
         x_password: Scalar,
     ) -> bool {
         let c = self.pedersen_commit(x_password, commitment_opening);
-        // println!("--------commitment COMPUTED {:#?}",  c);
-        // println!("--------commitment STORED {:#?}",  commitment);
         c == commitment
     }
 }

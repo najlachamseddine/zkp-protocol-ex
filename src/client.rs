@@ -11,7 +11,7 @@ use zkp_auth::{
 };
 use zkp_protocol_ex::{
     chaum_pedersen::*,
-    pedersen_elliptic_curve::{pedersen_setup_base_points, ZKPEllipticCurve},
+    pedersen_elliptic_curve::{pedersen_setup_base_points},
 };
 
 enum AuthType {
@@ -28,6 +28,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .map_err(|e| e)
         .expect("Could not connect to the server");
+
+    // For big number:
+    // let protocol = generate_1024bit_group_with_160bit_constants();
     let protocol = get_fixed_zkp_params();
     let user = "USER_NAME".to_string();
     let x = 123624374743u64;
@@ -42,6 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let _ = client.register(request_register).await?;
 
+    // Choosing between Exponentiation or Elliptic curve authentication (uncomment one)
+    // let authentication_type = AuthType::Exponentiation;
     let authentication_type = AuthType::EllipticCurve;
 
     match authentication_type {

@@ -15,8 +15,6 @@ use zkp_protocol_ex::chaum_pedersen::*;
 
 use curve25519_dalek::Scalar;
 use num_bigint::BigUint;
-use sha2::Sha512;
-use sha3::Sha3_512;
 use zkp_auth::{
     auth_server::{Auth, AuthServer},
     AuthenticationAnswerRequest, AuthenticationAnswerResponse, AuthenticationChallengeRequest,
