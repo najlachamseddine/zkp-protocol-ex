@@ -6,15 +6,15 @@ This is a client/server application for authentication based on exponentiation a
 
 ## Exponentiation
 
-The library for the exponentiation is set in the `chaum_pedersen` module. It is represented by the structure `ZKPProtocol` which is supporting the public variables p (order of the group), q (order of the sub group), g and h (two random variables mod q).
-The user keeps the secret/password and sends a solution `s` to a `challenge` received from the server. The server then verifies the solution given the public data in its possession. If succeful, a `session_id` is sent back to the user.
+The library for the exponentiation is set in the `chaum_pedersen` module. It is represented by the structure `ZKPProtocol` which is supporting the public variables `p` (order of the group), `q` (order of the sub group), `g` and `h` (two random variables mod q).
+The user keeps the secret/password and sends a solution `s` to a `challenge` received from the server. The server then verifies the solution given the public data in its possession. If successful, a `session_id` is sent back to the user.
 
 
 ## Elliptic curve
 
-This is using the `curve25519_dalek::ristretto::RistrettoPoint` to generate public points G and H. The first step is to compute a commitment from the client side `C = m * G + r * H mod p` where `m` is the secret and `r` is called the blinding factor.
-The client then reveals `C`, and opens after the commitment by sending `m` and `r` to the server which is validating it by comparing `C` to the commitment it computed.
-Two functions have been added to the proto support the elliptic curve authentication:
+The library for the exponentiation is set in the `pedersen_elliptic_curve` module. This is using the `curve25519_dalek::ristretto::RistrettoPoint` to generate public points G and H on the curve. The first step is to compute a commitment from the client side `C = m * G + r * H mod p` where `m` is the secret and `r` is called the blinding factor.
+The client then reveals `C`, and after opens the commitment by sending `m` and `r` to the server which is validating it by comparing `C` to the commitment it computes.
+Two functions have been added to the proto to support the elliptic curve authentication:
 ```
 rpc SendPedersenCommitment(PedersenCommitmentRequest) returns (PedersenCommitmentResponse) {}
 rpc OpenCommitment(CommitmentOpeningRequest) returns (CommitmentOpeningResponse) {}
@@ -61,7 +61,7 @@ enum AuthType {
 }
 ```
 
- You will need to comment out one the line below:
+ You will need to comment out one the line below in the `main()` function:
 
 ```  
 // Choosing between Exponentiation or Elliptic curve authentication (uncomment one)
@@ -92,7 +92,7 @@ As the client is simulating a UI, the container will restart after each call to 
 * Better logging (info, error, warn)
 * files for different types of authentication library can be added within a subfolder
 * Use a client who is interacting 
-* Write benchmark with multiple users connecting at the same time (cargo bench can be used)
+* Write benchmark with multiple users connecting at the same time (cargo bench can be used) using tokio:spawn
 * Test the bigUint value in the exponentiation authentication (function provided but not tested)
 * 
 
